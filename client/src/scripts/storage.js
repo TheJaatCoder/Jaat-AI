@@ -1,6 +1,7 @@
 /**
  * Storage functionality for the Jaat-AI chat application
  * Handles saving and retrieving conversations from localStorage
+ * Created by Rohit Sangwan
  */
 class ChatStorage {
   constructor() {

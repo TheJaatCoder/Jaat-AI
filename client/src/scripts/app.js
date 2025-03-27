@@ -1,6 +1,7 @@
 /**
  * Main application file for Jaat-AI
  * Initializes the application and connects components
+ * Created by Rohit Sangwan
  */
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize the storage
@@ -13,5 +14,5 @@ document.addEventListener('DOMContentLoaded', () => {
   jaatAI.init();
   
   // Log welcome message to console
-  console.log('Jaat-AI initialized successfully');
+  console.log('Jaat-AI by Rohit Sangwan initialized successfully');
 });

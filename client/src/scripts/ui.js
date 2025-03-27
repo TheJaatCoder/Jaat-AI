@@ -1,6 +1,7 @@
 /**
  * UI functionality for the Jaat-AI chat application
  * Handles DOM manipulation, event handling, and UI updates
+ * Created by Rohit Sangwan
  */
 class ChatUI {
   constructor() {

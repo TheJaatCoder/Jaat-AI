@@ -90,6 +90,18 @@ button:disabled {
   height: 100%;
 }
 
+.sidebar-header {
+  padding: 1rem 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
 .new-chat-container {
   padding: 0.75rem;
 }
@@ -201,6 +213,17 @@ button:disabled {
 .mobile-title {
   font-size: 1.125rem;
   font-weight: 600;
+  margin-bottom: 0;
+}
+
+.mobile-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  position: absolute;
+  top: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 /* Mobile sidebar */
@@ -231,6 +254,17 @@ button:disabled {
   align-items: center;
   padding: 1rem;
   border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-title-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-author {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: -0.25rem;
 }
 
 .close-mobile-menu {

@@ -1,19 +1,20 @@
 /**
  * Chat functionality for the Jaat-AI application
  * Handles the core chat logic, message processing, and AI responses
+ * Created by Rohit Sangwan
  */
 class JaatAI {
   constructor() {
     this.isGenerating = false;
     this.currentConversationId = null;
-    this.welcomeMessage = "Hello! I'm Jaat-AI, your AI assistant. How can I help you today?";
+    this.welcomeMessage = "Hello! I'm Jaat-AI created by Rohit Sangwan, your advanced AI assistant. How can I help you today?";
     
     // Predefined responses for the AI assistant
     this.responses = {
       default: "I'm a demo version with limited capabilities. The full version will have more advanced features. Join our waitlist to get access when we launch!",
-      greeting: "Hello! How can I assist you today?",
+      greeting: "Hello! I'm Rohit Sangwan's AI assistant. How can I assist you today?",
       help: "I can answer questions, provide information, and help with various tasks. What would you like assistance with?",
-      about: "I'm Jaat-AI, an AI assistant designed to be helpful, harmless, and honest. I'm currently in demo mode, but our full version will be launching soon!",
+      about: "I'm Jaat-AI, created by Rohit Sangwan. I'm an AI assistant designed to be helpful, harmless, and honest. I'm currently in demo mode, but our full version will be launching soon!",
       features: "The full version will include advanced capabilities like answering complex questions, writing content, providing summaries, code assistance, and much more.",
       capabilities: "I can help with writing, research, creative ideas, problem-solving, and more. In this demo, I have limited functionality, but the full version will be much more capable.",
       goodbye: "Goodbye! Feel free to come back when you have more questions.",
