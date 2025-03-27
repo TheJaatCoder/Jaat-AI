@@ -5,38 +5,40 @@
  */
 class ChatStorage {
   constructor() {
-    this.storageKey = 'jaat-ai-conversations';
-    this.activeConversationKey = 'jaat-ai-active-conversation';
+    this.STORAGE_KEY = 'jaat_ai_conversations';
+    this.ACTIVE_CONVERSATION_KEY = 'jaat_ai_active_conversation';
   }
-
+  
   /**
    * Initialize the storage
    * @returns {Array} Array of saved conversations
    */
   init() {
-    if (!this.getConversations()) {
-      this.saveConversations([]);
+    // If no conversations exist in storage, create an empty array
+    if (!localStorage.getItem(this.STORAGE_KEY)) {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify([]));
     }
+    
     return this.getConversations();
   }
-
+  
   /**
    * Get all saved conversations
    * @returns {Array} Array of conversation objects
    */
   getConversations() {
-    const saved = localStorage.getItem(this.storageKey);
-    return saved ? JSON.parse(saved) : null;
+    const conversations = localStorage.getItem(this.STORAGE_KEY);
+    return conversations ? JSON.parse(conversations) : [];
   }
-
+  
   /**
    * Save conversations to localStorage
    * @param {Array} conversations Array of conversation objects
    */
   saveConversations(conversations) {
-    localStorage.setItem(this.storageKey, JSON.stringify(conversations));
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(conversations));
   }
-
+  
   /**
    * Create a new conversation
    * @param {String} title Initial title for the conversation
@@ -44,19 +46,21 @@ class ChatStorage {
    */
   createConversation(title = 'New Chat') {
     const conversations = this.getConversations();
+    
     const newConversation = {
-      id: Date.now().toString(),
+      id: this.generateId(),
       title: title,
       messages: [],
-      createdAt: new Date().toISOString()
+      createdAt: Date.now()
     };
     
     conversations.unshift(newConversation);
     this.saveConversations(conversations);
     this.setActiveConversation(newConversation.id);
+    
     return newConversation;
   }
-
+  
   /**
    * Get a conversation by ID
    * @param {String} id Conversation ID
@@ -64,9 +68,9 @@ class ChatStorage {
    */
   getConversation(id) {
     const conversations = this.getConversations();
-    return conversations.find(conv => conv.id === id) || null;
+    return conversations.find(conversation => conversation.id === id) || null;
   }
-
+  
   /**
    * Add a message to a conversation
    * @param {String} conversationId Conversation ID
@@ -75,83 +79,86 @@ class ChatStorage {
    */
   addMessage(conversationId, message) {
     const conversations = this.getConversations();
-    const index = conversations.findIndex(conv => conv.id === conversationId);
+    const index = conversations.findIndex(c => c.id === conversationId);
     
     if (index === -1) return null;
     
     // Add message to conversation
-    conversations[index].messages.push({
-      ...message,
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString()
-    });
+    conversations[index].messages.push(message);
     
     // Update conversation title if it's the first user message
-    if (message.role === 'user' && conversations[index].messages.length <= 2) {
-      const title = message.content.length > 30 
-        ? message.content.substring(0, 27) + '...' 
-        : message.content;
-      conversations[index].title = title;
+    if (message.role === 'user' && conversations[index].messages.length === 1) {
+      const titleText = message.content.slice(0, 30);
+      conversations[index].title = titleText + (titleText.length < message.content.length ? '...' : '');
     }
     
     this.saveConversations(conversations);
     return conversations[index];
   }
-
+  
   /**
    * Delete a conversation
    * @param {String} id Conversation ID to delete
    * @returns {Boolean} True if successfully deleted
    */
   deleteConversation(id) {
-    const conversations = this.getConversations();
-    const filteredConversations = conversations.filter(conv => conv.id !== id);
+    let conversations = this.getConversations();
+    const initialLength = conversations.length;
     
-    if (filteredConversations.length === conversations.length) {
-      return false; // Nothing was deleted
+    conversations = conversations.filter(c => c.id !== id);
+    
+    if (conversations.length < initialLength) {
+      this.saveConversations(conversations);
+      
+      // If the active conversation was deleted, set active to null
+      if (this.getActiveConversation() === id) {
+        this.setActiveConversation(conversations.length > 0 ? conversations[0].id : null);
+      }
+      
+      return true;
     }
     
-    this.saveConversations(filteredConversations);
-    
-    // If deleted the active conversation, set a new active one
-    if (this.getActiveConversation() === id) {
-      this.setActiveConversation(
-        filteredConversations.length > 0 ? filteredConversations[0].id : null
-      );
-    }
-    
-    return true;
+    return false;
   }
-
+  
   /**
    * Get the active conversation ID
    * @returns {String|null} Active conversation ID or null
    */
   getActiveConversation() {
-    return localStorage.getItem(this.activeConversationKey);
+    return localStorage.getItem(this.ACTIVE_CONVERSATION_KEY);
   }
-
+  
   /**
    * Set the active conversation ID
    * @param {String|null} id Conversation ID or null
    */
   setActiveConversation(id) {
     if (id) {
-      localStorage.setItem(this.activeConversationKey, id);
+      localStorage.setItem(this.ACTIVE_CONVERSATION_KEY, id);
     } else {
-      localStorage.removeItem(this.activeConversationKey);
+      localStorage.removeItem(this.ACTIVE_CONVERSATION_KEY);
     }
   }
-
+  
   /**
    * Clear all conversations
    */
   clearAll() {
-    localStorage.removeItem(this.storageKey);
-    localStorage.removeItem(this.activeConversationKey);
+    localStorage.removeItem(this.STORAGE_KEY);
+    localStorage.removeItem(this.ACTIVE_CONVERSATION_KEY);
     this.init();
+  }
+  
+  /**
+   * Generate a unique ID
+   * @returns {String} Unique ID
+   */
+  generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
   }
 }
 
-// Create a global storage instance
-const chatStorage = new ChatStorage();
+// Export a singleton instance
+const storage = new ChatStorage();
+export default storage;

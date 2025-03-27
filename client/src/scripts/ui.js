@@ -5,239 +5,300 @@
  */
 class ChatUI {
   constructor() {
-    // DOM elements
-    this.messageInput = document.getElementById('message-input');
-    this.chatForm = document.getElementById('chat-form');
-    this.sendButton = document.getElementById('send-button');
-    this.chatMessages = document.getElementById('chat-messages');
-    this.modalBackdrop = document.getElementById('modal-backdrop');
-    this.waitlistModal = document.getElementById('waitlist-modal');
-    this.closeModalBtn = document.getElementById('close-modal');
-    this.waitlistForm = document.getElementById('waitlist-form');
-    this.formSuccess = document.getElementById('form-success');
-    this.formError = document.getElementById('form-error');
-    this.joinWaitlistBtn = document.getElementById('join-waitlist-btn');
-    this.mobileJoinWaitlist = document.getElementById('mobile-join-waitlist');
-    this.mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    this.mobileSidebar = document.getElementById('mobile-sidebar');
-    this.closeMobileMenu = document.getElementById('close-mobile-menu');
-    this.newChatBtn = document.getElementById('new-chat-btn');
-    this.mobileNewChat = document.getElementById('mobile-new-chat');
-    this.conversationList = document.getElementById('conversation-list');
-    this.mobileConversationList = document.getElementById('mobile-conversation-list');
+    // Main elements
+    this.chatArea = null;
+    this.messageForm = null;
+    this.userInput = null;
+    this.sendButton = null;
+    this.menuToggle = null;
+    this.sidebar = null;
+    this.conversations = null;
+    
+    // Mobile elements
+    this.mobileSidebar = null;
+    this.mobileMenuClose = null;
+    
+    // Chat elements
+    this.newChatBtn = null;
+    this.mobileNewChat = null;
+    
+    // Waitlist elements
+    this.waitlistBtn = null;
+    this.mobileWaitlistBtn = null;
+    this.waitlistModal = null;
+    this.closeModalBtn = null;
+    this.waitlistForm = null;
+    
+    // Chat state
+    this.isGenerating = false;
+    this.chatApp = null;
   }
-
+  
   /**
    * Initialize the UI and event listeners
    */
-  init() {
-    // Auto-resize input field
-    this.messageInput.addEventListener('input', this.autoResizeInput.bind(this));
+  init(chatApp) {
+    this.chatApp = chatApp;
     
-    // Chat form submission
-    this.chatForm.addEventListener('submit', this.handleSubmit.bind(this));
+    // Get DOM elements
+    this.chatArea = document.getElementById('chat-messages');
+    this.messageForm = document.getElementById('chat-form');
+    this.userInput = document.getElementById('message-input');
+    this.sendButton = document.getElementById('send-button');
+    this.menuToggle = document.getElementById('menu-toggle');
+    this.sidebar = document.querySelector('.sidebar');
+    this.conversations = {
+      desktop: document.getElementById('conversation-list'),
+      mobile: document.getElementById('mobile-conversation-list')
+    };
     
-    // Waitlist modal events
-    this.joinWaitlistBtn.addEventListener('click', this.openWaitlistModal.bind(this));
-    this.mobileJoinWaitlist.addEventListener('click', this.openWaitlistModal.bind(this));
+    // Mobile elements
+    this.mobileSidebar = document.querySelector('.mobile-sidebar');
+    this.mobileMenuClose = document.getElementById('mobile-menu-close');
+    
+    // Chat elements
+    this.newChatBtn = document.getElementById('new-chat');
+    this.mobileNewChat = document.getElementById('mobile-new-chat');
+    
+    // Waitlist elements
+    this.waitlistBtn = document.getElementById('join-waitlist');
+    this.mobileWaitlistBtn = document.getElementById('mobile-join-waitlist');
+    this.waitlistModal = document.getElementById('waitlist-modal');
+    this.closeModalBtn = document.getElementById('close-modal');
+    this.waitlistForm = document.getElementById('waitlist-form');
+    
+    // Set up event listeners
+    this.messageForm.addEventListener('submit', this.handleSubmit.bind(this));
+    this.userInput.addEventListener('input', this.autoResizeInput.bind(this));
+    this.userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!this.isGenerating && this.userInput.value.trim()) {
+          this.messageForm.dispatchEvent(new Event('submit'));
+        }
+      }
+    });
+    
+    // Enable/disable send button based on input
+    this.userInput.addEventListener('input', () => {
+      this.sendButton.disabled = !this.userInput.value.trim();
+    });
+    
+    // Mobile menu
+    this.menuToggle.addEventListener('click', this.openMobileSidebar.bind(this));
+    this.mobileMenuClose.addEventListener('click', this.closeMobileSidebar.bind(this));
+    
+    // New chat
+    this.newChatBtn.addEventListener('click', () => {
+      this.chatApp.startNewConversation();
+      this.focusInput();
+    });
+    
+    this.mobileNewChat.addEventListener('click', () => {
+      this.chatApp.startNewConversation();
+      this.closeMobileSidebar();
+      this.focusInput();
+    });
+    
+    // Waitlist
+    this.waitlistBtn.addEventListener('click', this.openWaitlistModal.bind(this));
+    this.mobileWaitlistBtn.addEventListener('click', this.openWaitlistModal.bind(this));
     this.closeModalBtn.addEventListener('click', this.closeWaitlistModal.bind(this));
-    this.modalBackdrop.addEventListener('click', (e) => {
-      if (e.target === this.modalBackdrop) {
+    this.waitlistForm.addEventListener('submit', this.handleWaitlistSubmit.bind(this));
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+      if (e.target === this.waitlistModal) {
         this.closeWaitlistModal();
       }
     });
     
-    // Waitlist form submission
-    this.waitlistForm.addEventListener('submit', this.handleWaitlistSubmit.bind(this));
-    
-    // Mobile menu events
-    this.mobileMenuBtn.addEventListener('click', this.openMobileSidebar.bind(this));
-    this.closeMobileMenu.addEventListener('click', this.closeMobileSidebar.bind(this));
-    
-    // New chat button
-    this.newChatBtn.addEventListener('click', () => jaatAI.startNewConversation());
-    this.mobileNewChat.addEventListener('click', () => {
-      this.closeMobileSidebar();
-      jaatAI.startNewConversation();
+    // Close mobile sidebar when clicking outside
+    window.addEventListener('click', (e) => {
+      if (e.target === this.mobileSidebar) {
+        this.closeMobileSidebar();
+      }
     });
     
-    // Update the conversation list
-    this.updateConversationList();
+    // Initial focus
+    this.focusInput();
     
-    // Focus input on desktop
-    if (window.innerWidth >= 768) {
-      this.messageInput.focus();
-    }
+    return this;
   }
-
+  
   /**
    * Auto-resize the message input field as user types
    */
   autoResizeInput() {
-    this.messageInput.style.height = 'auto';
-    this.messageInput.style.height = `${this.messageInput.scrollHeight}px`;
+    // Reset height to auto to correctly calculate new height
+    this.userInput.style.height = 'auto';
     
-    // Enable/disable the send button based on input
-    this.sendButton.disabled = this.messageInput.value.trim() === '';
+    // Set new height based on scrollHeight, with a maximum height
+    const newHeight = Math.min(this.userInput.scrollHeight, 150);
+    this.userInput.style.height = `${newHeight}px`;
   }
-
+  
   /**
    * Handle chat form submission
    * @param {Event} e Form submission event
    */
   handleSubmit(e) {
     e.preventDefault();
-    const message = this.messageInput.value.trim();
-    if (message) {
-      jaatAI.processMessage(message);
-      this.messageInput.value = '';
-      this.messageInput.style.height = 'auto';
-      this.sendButton.disabled = true;
-    }
+    
+    if (this.isGenerating) return;
+    
+    const message = this.userInput.value.trim();
+    if (!message) return;
+    
+    // Clear input and reset height
+    this.userInput.value = '';
+    this.userInput.style.height = 'auto';
+    this.sendButton.disabled = true;
+    
+    // Set generating state
+    this.isGenerating = true;
+    
+    // Process the message
+    this.chatApp.processMessage(message).finally(() => {
+      this.isGenerating = false;
+      this.focusInput();
+    });
   }
-
+  
   /**
    * Add a user message to the chat display
    * @param {String} message The user's message
    */
   addUserMessage(message) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message user-message message-appear';
-    
-    messageDiv.innerHTML = `
-      <div class="message-content">
-        <div class="avatar user-avatar">
-          <i class="fas fa-user"></i>
-        </div>
-        <div class="message-bubble">
-          <p>${this.formatMessage(message)}</p>
-        </div>
-      </div>
+    const messageEl = document.createElement('div');
+    messageEl.className = 'message user';
+    messageEl.innerHTML = `
+      <div class="message-content">${this.formatMessage(message)}</div>
     `;
-    
-    this.chatMessages.appendChild(messageDiv);
+    this.chatArea.appendChild(messageEl);
     this.scrollToBottom();
   }
-
+  
   /**
    * Add an AI message to the chat display
    * @param {String} message The AI's response
    */
   addAIMessage(message) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message ai-message message-appear';
-    
-    messageDiv.innerHTML = `
-      <div class="message-content">
-        <div class="avatar ai-avatar">
-          <i class="fas fa-robot"></i>
-        </div>
-        <div class="message-bubble">
-          <p>${this.formatMessage(message)}</p>
-        </div>
-      </div>
+    const messageEl = document.createElement('div');
+    messageEl.className = 'message assistant';
+    messageEl.innerHTML = `
+      <div class="message-content">${this.formatMessage(message)}</div>
     `;
-    
-    this.chatMessages.appendChild(messageDiv);
+    this.chatArea.appendChild(messageEl);
     this.scrollToBottom();
   }
-
+  
   /**
    * Format a message for display (convert line breaks, etc.)
    * @param {String} message The message to format
    * @returns {String} The formatted message
    */
   formatMessage(message) {
-    // Replace line breaks with <br> tags
-    return message.replace(/\n/g, '<br>');
+    return message
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/\n/g, '<br>');
   }
-
+  
   /**
    * Show the typing indicator while the AI is "thinking"
    */
   showTypingIndicator() {
-    const typingDiv = document.createElement('div');
-    typingDiv.id = 'typing-indicator';
-    typingDiv.className = 'message ai-message message-appear';
-    
-    typingDiv.innerHTML = `
-      <div class="message-content">
-        <div class="avatar ai-avatar">
-          <i class="fas fa-robot"></i>
-        </div>
-        <div class="message-bubble">
-          <div class="typing-animation">
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
-          </div>
-        </div>
-      </div>
+    const indicatorEl = document.createElement('div');
+    indicatorEl.className = 'typing-indicator';
+    indicatorEl.id = 'typing-indicator';
+    indicatorEl.innerHTML = `
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
     `;
-    
-    this.chatMessages.appendChild(typingDiv);
+    this.chatArea.appendChild(indicatorEl);
     this.scrollToBottom();
   }
-
+  
   /**
    * Remove the typing indicator
    */
   removeTypingIndicator() {
-    const typingIndicator = document.getElementById('typing-indicator');
-    if (typingIndicator) {
-      typingIndicator.remove();
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+      indicator.remove();
     }
   }
-
+  
   /**
    * Scroll the chat to the bottom
    */
   scrollToBottom() {
-    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    this.chatArea.scrollTop = this.chatArea.scrollHeight;
   }
-
+  
   /**
    * Clear all messages from the chat display
    */
   clearMessages() {
-    this.chatMessages.innerHTML = '';
+    this.chatArea.innerHTML = '';
   }
-
+  
+  /**
+   * Show empty state when no conversations
+   */
+  showEmptyState() {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'empty-state';
+    emptyState.innerHTML = `
+      <div class="empty-state-icon">
+        <i class="fas fa-comments"></i>
+      </div>
+      <h2 class="empty-state-title">Welcome to Jaat-AI</h2>
+      <p class="empty-state-text">
+        Start a new conversation by typing a message below or clicking the "New chat" button.
+      </p>
+    `;
+    this.chatArea.appendChild(emptyState);
+  }
+  
   /**
    * Enable/disable the input field and send button
    * @param {Boolean} disabled Whether the input should be disabled
    */
   setInputDisabled(disabled) {
-    this.messageInput.disabled = disabled;
-    this.sendButton.disabled = disabled;
+    this.userInput.disabled = disabled;
+    this.sendButton.disabled = disabled || !this.userInput.value.trim();
   }
-
+  
   /**
    * Focus the input field
    */
   focusInput() {
-    this.messageInput.focus();
+    this.userInput.focus();
   }
-
+  
   /**
    * Open the waitlist modal
    */
   openWaitlistModal() {
-    this.modalBackdrop.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    this.waitlistForm.classList.remove('hidden');
-    this.formSuccess.classList.add('hidden');
-    this.formError.classList.add('hidden');
+    this.waitlistModal.style.display = 'block';
+    
+    // Close mobile sidebar if open
+    this.closeMobileSidebar();
   }
-
+  
   /**
    * Close the waitlist modal
    */
   closeWaitlistModal() {
-    this.modalBackdrop.classList.add('hidden');
-    document.body.style.overflow = '';
+    this.waitlistModal.style.display = 'none';
   }
-
+  
   /**
    * Handle waitlist form submission
    * @param {Event} e Form submission event
@@ -245,94 +306,113 @@ class ChatUI {
   handleWaitlistSubmit(e) {
     e.preventDefault();
     
-    // Get form data
-    const name = document.getElementById('name').value.trim();
-    const email = document.getElementById('email').value.trim();
+    // In a real application, this would send the form data to a server
+    // Here we'll just show a success message
     
-    // Simple validation
-    if (!name || !email) return;
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
     
-    // In a real app, this would send data to a server
-    // For this demo, just show the success message
+    // Reset form
+    e.target.reset();
     
-    this.waitlistForm.classList.add('hidden');
-    this.formSuccess.classList.remove('hidden');
+    // Close modal
+    this.closeWaitlistModal();
     
-    // Reset form fields
-    document.getElementById('name').value = '';
-    document.getElementById('email').value = '';
+    // Show success toast
+    this.showToast(`Thanks, ${name}! We've added you to our waitlist.`, 'success');
   }
-
+  
+  /**
+   * Show a toast notification
+   * @param {String} message The message to display
+   * @param {String} type The type of toast ('success' or 'error')
+   */
+  showToast(message, type = 'success') {
+    // Remove any existing toasts
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    
+    // Add to body
+    document.body.appendChild(toast);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      toast.remove();
+    }, 3000);
+  }
+  
   /**
    * Open the mobile sidebar
    */
   openMobileSidebar() {
-    this.mobileSidebar.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    this.mobileSidebar.style.display = 'block';
   }
-
+  
   /**
    * Close the mobile sidebar
    */
   closeMobileSidebar() {
-    this.mobileSidebar.classList.add('hidden');
-    document.body.style.overflow = '';
+    this.mobileSidebar.style.display = 'none';
   }
-
+  
   /**
    * Update the conversation list in the sidebar
    */
   updateConversationList() {
-    const conversations = chatStorage.getConversations();
-    const activeId = chatStorage.getActiveConversation();
+    // Get conversations from storage
+    const conversations = this.chatApp.storage.getConversations();
+    const activeId = this.chatApp.activeConversationId;
     
-    // Clear the lists
-    this.conversationList.innerHTML = '';
-    this.mobileConversationList.innerHTML = '';
-    
-    // Add conversations to both lists
-    conversations.forEach(conversation => {
-      // Create desktop item
-      const item = document.createElement('button');
-      item.className = 'conversation-item';
-      if (conversation.id === activeId) {
-        item.classList.add('active-conversation');
-      }
+    // Update both desktop and mobile conversation lists
+    ['desktop', 'mobile'].forEach(type => {
+      const list = this.conversations[type];
+      list.innerHTML = '';
       
-      item.innerHTML = `
-        <i class="fas fa-comment"></i>
-        <span class="conversation-text">${conversation.title}</span>
-      `;
-      
-      item.addEventListener('click', () => {
-        jaatAI.loadConversation(conversation.id);
+      conversations.forEach(conversation => {
+        const item = document.createElement('div');
+        item.className = `conversation-item ${conversation.id === activeId ? 'active' : ''}`;
+        item.dataset.id = conversation.id;
+        item.innerHTML = `
+          <i class="fas fa-comment"></i>
+          <div class="conversation-title">${conversation.title}</div>
+          <button class="delete-chat" data-id="${conversation.id}">
+            <i class="fas fa-trash"></i>
+          </button>
+        `;
+        
+        // Add click event to load conversation
+        item.addEventListener('click', (e) => {
+          // Don't trigger if delete button was clicked
+          if (e.target.closest('.delete-chat')) return;
+          
+          this.chatApp.loadConversation(conversation.id);
+          
+          // Close mobile sidebar if open
+          if (type === 'mobile') {
+            this.closeMobileSidebar();
+          }
+        });
+        
+        // Add event for delete button
+        const deleteBtn = item.querySelector('.delete-chat');
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.chatApp.deleteConversation(conversation.id);
+        });
+        
+        list.appendChild(item);
       });
-      
-      this.conversationList.appendChild(item);
-      
-      // Create mobile item (clone of desktop item)
-      const mobileItem = item.cloneNode(true);
-      mobileItem.addEventListener('click', () => {
-        jaatAI.loadConversation(conversation.id);
-      });
-      
-      this.mobileConversationList.appendChild(mobileItem);
     });
-    
-    // If no conversations, show a message
-    if (conversations.length === 0) {
-      const emptyMessage = document.createElement('div');
-      emptyMessage.className = 'empty-conversations';
-      emptyMessage.textContent = 'No conversations yet';
-      
-      this.conversationList.appendChild(emptyMessage);
-      
-      // Clone for mobile
-      const mobileEmptyMessage = emptyMessage.cloneNode(true);
-      this.mobileConversationList.appendChild(mobileEmptyMessage);
-    }
   }
 }
 
-// Create a global UI instance
-const chatUI = new ChatUI();
+// Export a singleton instance
+const ui = new ChatUI();
+export default ui;

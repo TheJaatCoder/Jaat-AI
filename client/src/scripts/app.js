@@ -3,16 +3,20 @@
  * Initializes the application and connects components
  * Created by Rohit Sangwan
  */
+
+// Import dependencies
+import storage from './storage.js';
+import jaatAI from './chat.js';
+import ui from './ui.js';
+
+// Initialize the application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize the storage
-  chatStorage.init();
+  // Initialize components
+  ui.init(jaatAI);
+  jaatAI.init(storage, ui);
   
-  // Initialize the UI
-  chatUI.init();
+  // Update conversation list
+  ui.updateConversationList();
   
-  // Initialize the chat AI
-  jaatAI.init();
-  
-  // Log welcome message to console
-  console.log('Jaat-AI by Rohit Sangwan initialized successfully');
+  console.log('Jaat-AI initialized successfully!');
 });

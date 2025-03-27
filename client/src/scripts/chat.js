@@ -5,176 +5,206 @@
  */
 class JaatAI {
   constructor() {
-    this.isGenerating = false;
-    this.currentConversationId = null;
-    this.welcomeMessage = "Hello! I'm Jaat-AI created by Rohit Sangwan, your advanced AI assistant. How can I help you today?";
+    this.storage = null;
+    this.ui = null;
+    this.activeConversationId = null;
     
-    // Predefined responses for the AI assistant
-    this.responses = {
-      default: "I'm a demo version with limited capabilities. The full version will have more advanced features. Join our waitlist to get access when we launch!",
-      greeting: "Hello! I'm Rohit Sangwan's AI assistant. How can I assist you today?",
-      help: "I can answer questions, provide information, and help with various tasks. What would you like assistance with?",
-      about: "I'm Jaat-AI, created by Rohit Sangwan. I'm an AI assistant designed to be helpful, harmless, and honest. I'm currently in demo mode, but our full version will be launching soon!",
-      features: "The full version will include advanced capabilities like answering complex questions, writing content, providing summaries, code assistance, and much more.",
-      capabilities: "I can help with writing, research, creative ideas, problem-solving, and more. In this demo, I have limited functionality, but the full version will be much more capable.",
-      goodbye: "Goodbye! Feel free to come back when you have more questions.",
-      thanks: "You're welcome! Is there anything else I can help you with?",
-      waitlist: "You can join our waitlist by clicking the 'Join Waitlist' button in the sidebar. We'll notify you when the full version launches!"
-    };
+    // These are some witty responses that will be used in demo mode
+    this.staticResponses = [
+      "I'm just a demo version, but I'd be happy to help with that in the full version!",
+      "That's an interesting question! The full version of Jaat-AI would have a great answer for you.",
+      "In the complete version, I could provide detailed information about that. Join our waitlist to access it soon!",
+      "I appreciate your curiosity! The full version will have comprehensive answers to questions like this.",
+      "That's something I'd love to help with in the full version. Join the waitlist to be among the first to use it!",
+      "Great question! The complete Jaat-AI will provide thorough responses to inquiries like yours.",
+      "I'm currently in demo mode, but the full version will have a wealth of knowledge on this topic!",
+      "Thanks for asking! The enhanced version of Jaat-AI will be able to assist with that in detail.",
+      "I wish I could give you a complete answer in this demo. The full version will have that capability!",
+      "In the full version, I'll be able to analyze that question and provide extensive insights."
+    ];
   }
-
+  
   /**
    * Initialize the chat interface
    */
-  init() {
-    // Set up the active conversation or create a new one
-    const activeId = chatStorage.getActiveConversation();
-    const conversations = chatStorage.getConversations();
+  init(storage, ui) {
+    this.storage = storage;
+    this.ui = ui;
     
-    if (activeId && conversations.find(c => c.id === activeId)) {
-      this.loadConversation(activeId);
-    } else if (conversations.length > 0) {
-      this.loadConversation(conversations[0].id);
-    } else {
-      this.startNewConversation();
+    // Initialize storage and get all conversations
+    const conversations = this.storage.init();
+    
+    // Check if there's an active conversation
+    this.activeConversationId = this.storage.getActiveConversation();
+    
+    // If no active conversation but conversations exist, set the first one as active
+    if (!this.activeConversationId && conversations.length > 0) {
+      this.activeConversationId = conversations[0].id;
+      this.storage.setActiveConversation(this.activeConversationId);
     }
+    
+    // Load the active conversation if it exists
+    if (this.activeConversationId) {
+      this.loadConversation(this.activeConversationId);
+    } else {
+      // Otherwise show empty state
+      this.ui.showEmptyState();
+    }
+    
+    return this;
   }
-
+  
   /**
    * Start a new conversation
    */
   startNewConversation() {
-    const newConversation = chatStorage.createConversation('New Chat');
-    this.currentConversationId = newConversation.id;
+    // Create a new conversation in storage
+    const conversation = this.storage.createConversation();
+    this.activeConversationId = conversation.id;
     
-    // Clear the chat display
-    chatUI.clearMessages();
+    // Update UI
+    this.ui.clearMessages();
+    this.ui.updateConversationList();
     
-    // Add welcome message
-    this.addAIMessage(this.welcomeMessage);
+    return conversation;
   }
-
+  
   /**
    * Load an existing conversation
    * @param {String} conversationId The ID of the conversation to load
    */
   loadConversation(conversationId) {
-    const conversation = chatStorage.getConversation(conversationId);
-    if (!conversation) return;
+    const conversation = this.storage.getConversation(conversationId);
     
-    this.currentConversationId = conversationId;
-    chatStorage.setActiveConversation(conversationId);
+    if (!conversation) {
+      console.error(`Conversation with ID ${conversationId} not found`);
+      return null;
+    }
     
-    // Clear the current messages and display the loaded conversation
-    chatUI.clearMessages();
+    // Set as active conversation
+    this.activeConversationId = conversationId;
+    this.storage.setActiveConversation(conversationId);
     
-    // Display all messages in the conversation
+    // Update UI
+    this.ui.clearMessages();
+    
+    // Add all messages to the UI
     conversation.messages.forEach(message => {
       if (message.role === 'user') {
-        chatUI.addUserMessage(message.content);
+        this.ui.addUserMessage(message.content);
       } else {
-        chatUI.addAIMessage(message.content);
+        this.ui.addAIMessage(message.content);
       }
     });
     
-    // If no messages, add the welcome message
-    if (conversation.messages.length === 0) {
-      this.addAIMessage(this.welcomeMessage);
-    }
+    // Update conversation list to highlight the active one
+    this.ui.updateConversationList();
     
-    // Update sidebar to show the active conversation
-    chatUI.updateConversationList();
-    chatUI.closeMobileSidebar();
+    return conversation;
   }
-
+  
   /**
    * Process a user message and generate a response
    * @param {String} userMessage The user's message text
    */
   async processMessage(userMessage) {
-    if (!userMessage.trim() || this.isGenerating) return;
+    if (!userMessage.trim()) return;
     
-    // Add user message to UI and storage
-    chatUI.addUserMessage(userMessage);
-    chatStorage.addMessage(this.currentConversationId, {
+    // If there's no active conversation, create one
+    if (!this.activeConversationId) {
+      const newConversation = this.startNewConversation();
+      this.activeConversationId = newConversation.id;
+    }
+    
+    // Add user message to UI
+    this.ui.addUserMessage(userMessage);
+    
+    // Save the user message to storage
+    this.storage.addMessage(this.activeConversationId, {
       role: 'user',
       content: userMessage
     });
     
-    // Start AI response generation
-    this.isGenerating = true;
-    chatUI.setInputDisabled(true);
+    // Update conversation list in case the title changed
+    this.ui.updateConversationList();
     
-    // Show the typing indicator
-    chatUI.showTypingIndicator();
+    // Show the AI is thinking
+    this.ui.showTypingIndicator();
     
-    // Determine which response to use based on user message
-    const response = await this.generateResponse(userMessage);
-    
-    // Simulate AI thinking time (0.5-2.5 seconds)
-    const thinkTime = Math.floor(Math.random() * 2000) + 500;
-    setTimeout(() => {
-      chatUI.removeTypingIndicator();
+    try {
+      // Generate AI response
+      const aiResponse = await this.generateResponse(userMessage);
       
-      // Add AI response
-      this.addAIMessage(response);
-      
-      // Reset state
-      this.isGenerating = false;
-      chatUI.setInputDisabled(false);
-      chatUI.focusInput();
-      
-      // Update the conversation list to reflect any title changes
-      chatUI.updateConversationList();
-    }, thinkTime);
+      // Remove typing indicator and add AI response
+      this.ui.removeTypingIndicator();
+      this.addAIMessage(aiResponse);
+    } catch (error) {
+      console.error('Error generating response:', error);
+      this.ui.removeTypingIndicator();
+      this.addAIMessage("I'm sorry, I encountered an error. Please try again.");
+    }
   }
-
+  
   /**
    * Add an AI message to the chat and storage
    * @param {String} message The AI's response message
    */
   addAIMessage(message) {
-    chatUI.addAIMessage(message);
-    chatStorage.addMessage(this.currentConversationId, {
+    // Add AI message to UI
+    this.ui.addAIMessage(message);
+    
+    // Save the AI message to storage
+    this.storage.addMessage(this.activeConversationId, {
       role: 'assistant',
       content: message
     });
   }
-
+  
   /**
    * Generate an AI response based on the user's message
    * @param {String} userMessage The user's message
-   * @returns {String} The AI's response
+   * @returns {Promise<String>} The AI's response
    */
   async generateResponse(userMessage) {
-    const lowerMessage = userMessage.toLowerCase();
+    // Simulate network delay for a more realistic experience
+    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
     
-    // Check for specific keywords and return appropriate responses
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
-      return this.responses.greeting;
-    } else if (lowerMessage.includes('help') || lowerMessage.includes('what can you do')) {
-      return this.responses.help;
-    } else if (lowerMessage.includes('about you') || lowerMessage.includes('who are you')) {
-      return this.responses.about;
-    } else if (lowerMessage.includes('feature') || lowerMessage.includes('capabilities') || lowerMessage.includes('able to')) {
-      return this.responses.features;
-    } else if (lowerMessage.includes('goodbye') || lowerMessage.includes('bye')) {
-      return this.responses.goodbye;
-    } else if (lowerMessage.includes('thank')) {
-      return this.responses.thanks;
-    } else if (lowerMessage.includes('waitlist') || lowerMessage.includes('sign up') || lowerMessage.includes('join')) {
-      return this.responses.waitlist;
+    // In this demo version, just return a random response from the static list
+    // In a real implementation, this would call an API
+    const randomIndex = Math.floor(Math.random() * this.staticResponses.length);
+    return this.staticResponses[randomIndex];
+  }
+  
+  /**
+   * Delete a conversation
+   * @param {String} conversationId The ID of the conversation to delete
+   */
+  deleteConversation(conversationId) {
+    const success = this.storage.deleteConversation(conversationId);
+    
+    if (success) {
+      // If we deleted the active conversation, clear the messages
+      if (conversationId === this.activeConversationId) {
+        this.activeConversationId = this.storage.getActiveConversation();
+        
+        if (this.activeConversationId) {
+          // Load the new active conversation
+          this.loadConversation(this.activeConversationId);
+        } else {
+          // No conversations left, show empty state
+          this.ui.clearMessages();
+          this.ui.showEmptyState();
+        }
+      }
+      
+      // Update the conversation list
+      this.ui.updateConversationList();
     }
     
-    // For more complex responses that don't match keywords
-    if (lowerMessage.length > 30) {
-      return this.responses.capabilities;
-    }
-    
-    // Default response
-    return this.responses.default;
+    return success;
   }
 }
 
-// Create a global chat instance
+// Export a singleton instance
 const jaatAI = new JaatAI();
+export default jaatAI;

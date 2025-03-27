@@ -3,164 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jaat-AI - Advanced AI Assistant by Rohit Sangwan</title>
-  <meta name="description" content="Jaat-AI - An advanced AI assistant created by Rohit Sangwan">
-  <meta name="author" content="Rohit Sangwan">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Jaat-AI - Chat with AI</title>
+  <link rel="stylesheet" href="./styles/main.css">
+  <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/src/styles/main.css">
 </head>
-<body class="app-container">
-  <!-- Modal Backdrop -->
-  <div id="modal-backdrop" class="modal-backdrop hidden">
-    <!-- Waitlist Modal -->
-    <div id="waitlist-modal" class="waitlist-modal message-appear">
-      <div class="modal-header">
-        <h2>Join Jaat-AI Waitlist</h2>
-        <button id="close-modal" class="close-button">
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <button class="new-chat-btn" id="newChatBtn">
+          <i class="fas fa-plus"></i> New Chat
+        </button>
+        <button class="mobile-close-btn" id="mobileSidebarClose">
           <i class="fas fa-times"></i>
         </button>
       </div>
-      <p class="modal-description">Be the first to know when Rohit Sangwan's advanced AI assistant is ready for full release.</p>
-      <form id="waitlist-form" class="waitlist-form">
-        <div class="form-group">
-          <label for="name">Full Name</label>
-          <input type="text" id="name" required>
-        </div>
-        <div class="form-group">
-          <label for="email">Email Address</label>
-          <input type="email" id="email" required>
-        </div>
-        <div class="form-submit">
-          <button type="submit" class="primary-button">Join Waitlist</button>
-        </div>
-      </form>
-      <div id="form-success" class="form-message success hidden">
-        <p>Thanks for joining our waitlist! We'll notify you when we launch.</p>
-      </div>
-      <div id="form-error" class="form-message error hidden">
-        <p>Sorry, there was an error. Please try again later.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main App Layout -->
-  <div class="app-layout">
-    <!-- Sidebar -->
-    <aside id="sidebar" class="sidebar">
-      <!-- App Title -->
-      <div class="sidebar-header">
-        <h2 class="sidebar-title">Jaat-AI</h2>
-        <div class="sidebar-author">by Rohit Sangwan</div>
+      
+      <div class="conversations" id="conversationsList">
+        <!-- Conversations will be added here dynamically -->
       </div>
       
-      <!-- New Chat Button -->
-      <div class="new-chat-container">
-        <button id="new-chat-btn" class="new-chat-btn">
-          <i class="fas fa-plus"></i>
-          New chat
-        </button>
-      </div>
-      
-      <!-- Conversations List -->
-      <div class="conversations-container">
-        <h3 class="conversations-heading">Recent conversations</h3>
-        <div id="conversation-list" class="conversation-list">
-          <!-- Conversation items will be populated here by JavaScript -->
-        </div>
-      </div>
-      
-      <!-- User Menu / Waitlist Button -->
       <div class="sidebar-footer">
-        <button id="join-waitlist-btn" class="waitlist-btn">
-          <i class="fas fa-envelope"></i>
-          Join Waitlist
+        <button class="clear-conversations-btn" id="clearConversationsBtn">
+          <i class="fas fa-trash"></i> Clear conversations
         </button>
+        <div class="user-info">
+          <div class="user-avatar">
+            <span>J</span>
+          </div>
+          <span class="username">Jaat-AI User</span>
+        </div>
       </div>
     </aside>
-
-    <!-- Mobile Header -->
-    <div class="mobile-header">
-      <button id="mobile-menu-btn" class="mobile-menu-btn">
-        <i class="fas fa-bars"></i>
-      </button>
-      <h1 class="mobile-title">Jaat-AI</h1>
-      <div class="mobile-subtitle">by Rohit Sangwan</div>
-      <button id="mobile-new-chat" class="mobile-new-chat">
-        <i class="fas fa-plus"></i>
-      </button>
-    </div>
-
-    <!-- Mobile Sidebar (hidden by default) -->
-    <div id="mobile-sidebar" class="mobile-sidebar hidden">
-      <div class="mobile-sidebar-content">
-        <div class="mobile-sidebar-header">
-          <div class="sidebar-title-container">
-            <h2>Jaat-AI</h2>
-            <div class="sidebar-author">by Rohit Sangwan</div>
-          </div>
-          <button id="close-mobile-menu" class="close-mobile-menu">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        
-        <!-- Mobile Conversation List -->
-        <div class="mobile-conversations">
-          <h3 class="conversations-heading">Recent conversations</h3>
-          <div id="mobile-conversation-list" class="conversation-list">
-            <!-- Mobile conversation items will be populated here by JavaScript -->
-          </div>
-        </div>
-        
-        <!-- Mobile Waitlist Button -->
-        <div class="mobile-sidebar-footer">
-          <button id="mobile-join-waitlist" class="waitlist-btn">
-            <i class="fas fa-envelope"></i>
-            Join Waitlist
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Main Content Area -->
-    <main class="main-content">
-      <!-- Chat Messages Area -->
-      <div id="chat-messages" class="chat-messages">
-        <!-- Messages will be populated here by JavaScript -->
+    
+    <!-- Main chat area -->
+    <main class="chat-container">
+      <div class="mobile-header">
+        <button class="mobile-menu-btn" id="mobileSidebarOpen">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1 class="mobile-title">Jaat-AI</h1>
       </div>
       
-      <!-- Chat Input Area -->
+      <!-- Chat messages area -->
+      <div class="chat-messages" id="chatMessages">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-state-icon">
+            <i class="far fa-comment-dots"></i>
+          </div>
+          <h2>How can I help you today?</h2>
+          <div class="example-prompts">
+            <button class="example-prompt">Explain quantum computing</button>
+            <button class="example-prompt">Write a poem about spring</button>
+            <button class="example-prompt">How to learn JavaScript?</button>
+            <button class="example-prompt">Generate a workout plan</button>
+          </div>
+        </div>
+        <!-- Messages will be added here dynamically -->
+      </div>
+      
+      <!-- Chat input area -->
       <div class="chat-input-container">
-        <div class="chat-input-wrapper">
-          <form id="chat-form" class="chat-form">
+        <form id="chatForm" class="chat-form">
+          <div class="chat-input-wrapper">
             <textarea 
-              id="message-input" 
-              class="message-input"
-              placeholder="Message Jaat-AI..."
+              id="messageInput" 
+              class="chat-input" 
+              placeholder="Message Jaat-AI..." 
               rows="1"
+              autofocus
             ></textarea>
-            <button 
-              type="submit" 
-              class="send-button"
-              id="send-button"
-              disabled
-            >
+            <button type="submit" class="send-button" id="sendButton">
               <i class="fas fa-paper-plane"></i>
             </button>
-          </form>
-          <p class="chat-disclaimer">
-            This is a demo version of Jaat-AI by Rohit Sangwan. Join our waitlist to access the full version when released.
-          </p>
-        </div>
+          </div>
+          <div class="chat-disclaimer">
+            Jaat-AI can make mistakes. Consider checking important information.
+          </div>
+        </form>
       </div>
     </main>
   </div>
-
-  <script src="/src/scripts/storage.js"></script>
-  <script src="/src/scripts/chat.js"></script>
-  <script src="/src/scripts/ui.js"></script>
-  <script src="/src/scripts/app.js"></script>
+  
+  <!-- Waitlist Modal -->
+  <div class="modal" id="waitlistModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Join the Waitlist</h2>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Be among the first to try Jaat-AI when we launch! Enter your email to join our waitlist.</p>
+        <form id="waitlistForm">
+          <div class="form-group">
+            <label for="waitlistEmail">Email address</label>
+            <input type="email" id="waitlistEmail" placeholder="Your email" required>
+          </div>
+          <button type="submit" class="waitlist-submit-btn">Join Waitlist</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+  
+  <!-- Scripts -->
+  <script src="./scripts/storage.js"></script>
+  <script src="./scripts/ui.js"></script>
+  <script src="./scripts/chat.js"></script>
+  <script src="./scripts/app.js"></script>
 </body>
 </html>
