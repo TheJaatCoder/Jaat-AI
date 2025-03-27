@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import App from "./App";
-import "./index.css";
+import "./styles/main.css";
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Redirect to the HTML version since we're using vanilla JS
+window.location.href = "/index.html";
