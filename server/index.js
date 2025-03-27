@@ -18,7 +18,10 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 5000;
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Jaat-AI server running on port ${PORT}`);
 });
+
+// Export server for potential use by other modules
+export default server;
